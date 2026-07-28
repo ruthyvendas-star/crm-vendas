@@ -496,6 +496,10 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
       <label class="fl">Status</label>
       <div class="status-row" id="m-status-row"></div>
     </div>
+    <div style="margin-bottom:1rem">
+      <label class="fl">Quem atende</label>
+      <button id="m-rep-toggle" onclick="toggleRepresentante()" class="status-btn" style="font-size:12px">👤 Atendido por representante</button>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">
       <div><label class="fl">Última conversa</label><input type="date" id="m-last-talk" onchange="saveModalField('last_talk',this.value)"></div>
       <div><label class="fl">Próximo contato</label><input type="date" id="m-next" onchange="saveModalField('next_contact',this.value)"></div>
@@ -1237,6 +1241,7 @@ function renderClientes(){
     const nc=c.next_contact?fmtDate(c.next_contact):null;
     const isLinked=c.matriz_code||matrizCodesInUse.has(c.code);
     const linkBadge=isLinked?'<span class="cc-linked-badge" title="Vinculado a outro cliente">🔗</span>':'';
+    const repBadge=c.is_representante?'<span class="badge" style="background:#EEEDFE;color:#534AB7;margin-left:4px" title="Atendido por representante">👤 Rep.</span>':'';
     let isMin=false;
     if(c.ciclo_contatado){
       isMin = keepAllExpanded ? manuallyMinimizedCards.has(c.code) : !manuallyExpandedCards.has(c.code);
@@ -1246,6 +1251,7 @@ function renderClientes(){
         <div class="cc-min-row">
           <div class="cc-avatar" style="background:${AV_BG[ai]};color:${AV_FG[ai]}">${initials(c.name)}</div>
           <div class="cc-min-name">${c.name}${linkBadge}</div>
+          ${repBadge}
           <span class="badge" style="background:${cfg.bg};color:${cfg.color}">${cfg.label}</span>
           <span class="cc-min-meta">${c.last_talk?fmtDate(c.last_talk):''}</span>
           <i class="ti ti-chevron-down" title="Abrir este card" style="cursor:pointer;color:#9A948A" onclick="event.stopPropagation();toggleCardView('${c.code}')"></i>
@@ -1257,6 +1263,7 @@ function renderClientes(){
       <div class="cc-header">
         <div class="cc-avatar" style="background:${AV_BG[ai]};color:${AV_FG[ai]}">${initials(c.name)}</div>
         <div style="flex:1;min-width:0"><div class="cc-name">${c.name}${linkBadge}</div><div class="cc-code">Cód. ${c.code}</div></div>
+        ${repBadge}
         <span class="badge" style="background:${cfg.bg};color:${cfg.color}">${cfg.label}</span>
         ${minimizeIcon}
       </div>
@@ -1432,6 +1439,7 @@ window.openModal=function(code){
     </div>`;
   const cur=statusOf(c);
   document.getElementById('m-status-row').innerHTML=Object.entries(STATUS_CFG).map(([v,cfg])=>`<button class="status-btn${cur===v?' sel':''}" style="${cur===v?`border-color:${cfg.color};color:${cfg.color};background:${cfg.bg}`:''}" onclick="setStatus('${v}')">${cfg.label}</button>`).join('');
+  updateRepToggleUI(!!c.is_representante);
   document.getElementById('m-last-talk').value=c.last_talk||'';
   document.getElementById('m-next').value=c.next_contact||'';
   document.getElementById('m-budget').value=c.budget_num||'';
@@ -1753,6 +1761,24 @@ function renderHistorico(hist){
   if(!hist||!hist.length){el.innerHTML='<div class="panel-empty" style="padding:.75rem 0">Sem histórico ainda</div>';return;}
   el.innerHTML=[...hist].reverse().map(h=>`<div class="hist-item"><span class="hist-date">${fmtDate(h.date)}</span>${h.text}</div>`).join('');
 }
+
+function updateRepToggleUI(isRep){
+  const btn=document.getElementById('m-rep-toggle');
+  if(!btn)return;
+  btn.className='status-btn'+(isRep?' sel':'');
+  btn.style=isRep?'font-size:12px;border-color:#534AB7;color:#534AB7;background:#EEEDFE':'font-size:12px';
+}
+
+window.toggleRepresentante=async function(){
+  if(!openCode)return;
+  if(!allMeta[currentRegion])allMeta[currentRegion]={};
+  if(!allMeta[currentRegion][openCode])allMeta[currentRegion][openCode]={};
+  const m=allMeta[currentRegion][openCode];
+  m.is_representante=!m.is_representante;
+  updateRepToggleUI(m.is_representante);
+  if(currentSection==='clientes')renderClientes();
+  await saveRegion(currentRegion);
+};
 
 window.setStatus=async function(val){
   if(!allMeta[currentRegion])allMeta[currentRegion]={};

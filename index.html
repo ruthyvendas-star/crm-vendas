@@ -377,7 +377,7 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
 
   <div id="section-clientes" style="display:none">
     <div class="search-row">
-      <input type="text" id="search-input" placeholder="Buscar por nome, cidade ou código..." oninput="renderClientes()">
+      <input type="text" id="search-input" placeholder="Buscar por nome, cidade ou código..." oninput="debouncedRenderClientes()">
       <select id="filter-status" onchange="renderClientes()">
         <option value="">Todos os status</option>
         <option value="nao_definido">Não definido</option>
@@ -1210,6 +1210,12 @@ function populateCidadeFilter(){
   document.getElementById('filter-cidade').innerHTML='<option value="">Todas as cidades</option>'+cidades.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
 
+let searchDebounceTimer=null;
+function debouncedRenderClientes(){
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer=setTimeout(renderClientes,220);
+}
+
 function renderClientes(){
   document.getElementById('keep-expanded-toggle').checked=keepAllExpanded;
   const q=(document.getElementById('search-input').value||'').toLowerCase();
@@ -1223,12 +1229,13 @@ function renderClientes(){
   }).sort((a,b)=>a.city.localeCompare(b.city,'pt-BR')||a.name.localeCompare(b.name,'pt-BR'));
   const meta=allMeta[currentRegion]||{};
   const allRegionClients=regionClients(currentRegion);
+  const matrizCodesInUse=new Set(allRegionClients.filter(x=>x.matriz_code).map(x=>x.matriz_code));
   const html=list.map((c,i)=>{
     const s=statusOf(c);const cfg=STATUS_CFG[s];
     const d=c.days_since??daysSince(c.last_sale);
     const urgent=d!==null&&d>180;const ai=i%6;
     const nc=c.next_contact?fmtDate(c.next_contact):null;
-    const isLinked=c.matriz_code||allRegionClients.some(x=>x.code!==c.code&&x.matriz_code===c.code);
+    const isLinked=c.matriz_code||matrizCodesInUse.has(c.code);
     const linkBadge=isLinked?'<span class="cc-linked-badge" title="Vinculado a outro cliente">🔗</span>':'';
     let isMin=false;
     if(c.ciclo_contatado){

@@ -583,7 +583,7 @@ function lsKey(base, rid){ return base+'_'+(currentUID||'anon')+'_'+rid; }
 async function fbSet(path, data){
   setSyncStatus('saving','Salvando...');
   try{
-    await setDoc(doc(db,...path.split('/')),data,{merge:true});
+    await setDoc(doc(db,...path.split('/')),data);
     setSyncStatus('ok','Sincronizado');
   }catch(e){
     setSyncStatus('err','Erro ao salvar');

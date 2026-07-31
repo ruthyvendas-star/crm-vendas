@@ -452,6 +452,10 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
     <span class="page-sub" id="region-sub"></span>
   </div>
   <div class="region-menu-header">
+    <div id="cotas-menu-panel" style="margin-bottom:1.5rem;display:none">
+      <div style="font-size:13px;font-weight:600;color:#2D2D2D;margin-bottom:0.75rem">📊 Cotas do mês (por região)</div>
+      <div id="cotas-regions-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:1rem"></div>
+    </div>
     <div class="cover-kpi" id="region-kpi"></div>
     <div class="cover-grid">
       <div class="cover-card" onclick="goSection('clientes')">
@@ -535,31 +539,7 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
       <div style="position:relative;height:200px"><canvas id="chartMensal"></canvas></div>
       <p style="font-size:11px;color:#9A948A;margin-top:.5rem">Adicione fechamentos em <strong>Fechamento mensal</strong> para ver a curva.</p>
     </div>
-    <div id="cotas-regiao-admin" style="display:none">
-      <div class="chart-card" style="border:2px dashed #A32D2D">
-        <div class="chart-title" style="color:#A32D2D">🔧 Cotas do mês (só você vê)</div>
-        <div style="font-size:11px;color:#9A948A;margin-bottom:.75rem">Mês: <span id="cotas-r-mes"></span></div>
-        <div style="margin-bottom:1rem;display:flex;gap:8px;align-items:center">
-          <label style="font-size:11px;color:#5A5751">Quantidade de cotas:</label>
-          <input type="number" id="cr-num-cotas" min="1" value="6" style="font-size:11px;padding:5px;width:60px">
-          <button onclick="renderCotasInputs()" style="font-size:11px;padding:6px 10px;border-radius:6px;border:none;background:#9A948A;color:#fff;cursor:pointer">Atualizar</button>
-        </div>
-        <div id="cr-cotas-vendido" style="display:grid;gap:6px;margin-bottom:.75rem">
-          <div style="font-size:11px;color:#5A5751">Metas Vendido</div>
-        </div>
-        <div id="cr-cotas-faturado" style="display:grid;gap:6px;margin-bottom:.75rem">
-          <div style="font-size:11px;color:#5A5751">Metas Faturado</div>
-        </div>
-        <button onclick="saveCotasRegiaoTargets()" style="font-size:11px;padding:6px 12px;border-radius:6px;border:none;background:#0F6E56;color:#fff;cursor:pointer;margin-right:6px">Salvar metas</button>
-        <button onclick="registrarMesRegiao()" style="font-size:11px;padding:6px 12px;border-radius:6px;border:none;background:#A32D2D;color:#fff;cursor:pointer">Registrar mês (arquivar e zerar)</button>
-        <div id="cotas-r-status" style="font-size:11px;color:#0F6E56;margin-top:8px"></div>
-        <div style="margin-top:1rem;font-size:12px;color:#5A5751">
-          Vendido atual: <strong id="cr-atual-vendido">R$ 0</strong> — cota batida: <strong id="cr-hit-vendido">0/6</strong><br>
-          Faturado atual: <strong id="cr-atual-faturado">R$ 0</strong> — cota batida: <strong id="cr-hit-faturado">0/6</strong>
-        </div>
-        <div style="position:relative;height:180px;margin-top:1rem"><canvas id="chartCotasRegiao"></canvas></div>
-      </div>
-    </div>
+
   </div>
 
   <div id="section-followup" style="display:none">
@@ -1326,6 +1306,7 @@ window.goRegion=async function(rid){
     <div class="ckpi"><div class="ckpi-val" style="color:#0F6E56">${s.ativos}</div><div class="ckpi-label">Ativos</div></div>
     <div class="ckpi"><div class="ckpi-val" style="color:#A32D2D">${s.inat}</div><div class="ckpi-label">+180d inativos</div></div>
     <div class="ckpi"><div class="ckpi-val" style="color:#854F0B">${s.atrasados}</div><div class="ckpi-label">Follow-ups</div></div>`;
+  renderCotasMenu();
   window.scrollTo(0,0);
 };
 
@@ -1405,108 +1386,146 @@ function somaCotasAtuais(campo){
   return total;
 }
 
-// ── Painel de cotas por região (aba Análises) ──
-window.renderCotasInputs=function(){
-  const numCotas=parseInt(document.getElementById('cr-num-cotas').value)||6;
-  const rid=currentRegion;
-  const c=ensureCotas(rid);
-  
-  // Ajusta arrays se necessário
-  while(c.targets_vendido.length<numCotas)c.targets_vendido.push(0);
-  c.targets_vendido=c.targets_vendido.slice(0,numCotas);
-  while(c.targets_faturado.length<numCotas)c.targets_faturado.push(0);
-  c.targets_faturado=c.targets_faturado.slice(0,numCotas);
-  
-  // Cria inputs para vendido
-  const vendidoDiv=document.getElementById('cr-cotas-vendido');
-  vendidoDiv.innerHTML='<div style="font-size:11px;color:#5A5751">Metas Vendido</div>';
-  const vendidoGrid=document.createElement('div');
-  vendidoGrid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px';
-  for(let i=0;i<numCotas;i++){
-    const inp=document.createElement('input');
-    inp.type='number';
-    inp.id='cr-tv-'+i;
-    inp.placeholder='Cota '+(i+1);
-    inp.style.cssText='font-size:11px;padding:5px';
-    inp.value=c.targets_vendido[i]||'';
-    vendidoGrid.appendChild(inp);
-  }
-  vendidoDiv.appendChild(vendidoGrid);
-  
-  // Cria inputs para faturado
-  const faturadoDiv=document.getElementById('cr-cotas-faturado');
-  faturadoDiv.innerHTML='<div style="font-size:11px;color:#5A5751">Metas Faturado</div>';
-  const faturadoGrid=document.createElement('div');
-  faturadoGrid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px';
-  for(let i=0;i<numCotas;i++){
-    const inp=document.createElement('input');
-    inp.type='number';
-    inp.id='cr-tf-'+i;
-    inp.placeholder='Cota '+(i+1);
-    inp.style.cssText='font-size:11px;padding:5px';
-    inp.value=c.targets_faturado[i]||'';
-    faturadoGrid.appendChild(inp);
-  }
-  faturadoDiv.appendChild(faturadoGrid);
-};
-
-window.saveCotasRegiaoTargets=async function(){
-  const rid=currentRegion;
-  const c=ensureCotas(rid);
-  const numCotas=parseInt(document.getElementById('cr-num-cotas').value)||6;
-  c.targets_vendido=[];
-  c.targets_faturado=[];
-  for(let i=0;i<numCotas;i++){
-    c.targets_vendido.push(Number(document.getElementById('cr-tv-'+i).value)||0);
-    c.targets_faturado.push(Number(document.getElementById('cr-tf-'+i).value)||0);
-  }
-  await saveRegion(rid);
-  document.getElementById('cotas-r-status').textContent='Metas salvas!';
-  renderCotasRegiao();
-};
-
-window.registrarMesRegiao=async function(){
-  const rid=currentRegion;
-  const c=ensureCotas(rid);
-  if(!confirm('Registrar o mês '+c.mes+'? Isso arquiva o resultado no histórico e zera os campos para o próximo mês.'))return;
-  c.historico=c.historico||[];
-  c.historico.push({
-    mes:c.mes,
-    targets_vendido:c.targets_vendido,
-    targets_faturado:c.targets_faturado,
-    atual_vendido:c.atual_vendido,
-    atual_faturado:c.atual_faturado,
-    hit_vendido:cotaHit(c.atual_vendido,c.targets_vendido),
-    hit_faturado:cotaHit(c.atual_faturado,c.targets_faturado)
-  });
-  if(c.historico.length>12)c.historico=c.historico.slice(-12);
-  c.mes=currentMonthStr();
-  c.targets_vendido=[];
-  c.targets_faturado=[];
-  c.atual_vendido=0;
-  c.atual_faturado=0;
-  await saveRegion(rid);
-  document.getElementById('cotas-r-status').textContent='Mês registrado e arquivado!';
-  renderCotasRegiao();
-};
-
-function renderCotasRegiao(){
+// ── Painel de cotas dinâmico por região no menu ──
+window.renderCotasMenu=function(){
   if(!isAdmin())return;
-  const panel=document.getElementById('cotas-regiao-admin');
+  const panel=document.getElementById('cotas-menu-panel');
+  const grid=document.getElementById('cotas-regions-grid');
+  grid.innerHTML='';
+  
+  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
+  if(cotasData.length===0){
+    cotasData.push({id:Date.now(),nome:'',targets_vendido:[0,0,0,0,0,0],targets_faturado:[0,0,0,0,0,0]});
+  }
+  
+  cotasData.forEach((item,idx)=>{
+    const card=document.createElement('div');
+    card.style.cssText='background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:11px';
+    
+    // Header com input de nome da região
+    const header=document.createElement('div');
+    header.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';
+    const label=document.createElement('label');
+    label.textContent='Região:';
+    label.style.cssText='font-size:11px;color:#5A5751;font-weight:500;white-space:nowrap';
+    const nameInput=document.createElement('input');
+    nameInput.type='text';
+    nameInput.placeholder='Digite o nome da região';
+    nameInput.value=item.nome||'';
+    nameInput.style.cssText='flex:1;font-size:11px;padding:6px;border:1px solid #ccc;border-radius:4px';
+    nameInput.id='region-name-'+item.id;
+    header.appendChild(label);
+    header.appendChild(nameInput);
+    card.appendChild(header);
+    
+    // Inputs vendido
+    const vendidoLabel=document.createElement('div');
+    vendidoLabel.textContent='Metas Vendido (6 cotas)';
+    vendidoLabel.style.cssText='font-size:10px;color:#5A5751;font-weight:500;margin-bottom:4px;margin-top:6px';
+    card.appendChild(vendidoLabel);
+    const vendidoDiv=document.createElement('div');
+    vendidoDiv.style.cssText='display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:6px';
+    for(let i=0;i<6;i++){
+      const inp=document.createElement('input');
+      inp.type='number';
+      inp.id='tv-'+item.id+'-'+i;
+      inp.placeholder='C'+(i+1);
+      inp.style.cssText='font-size:9px;padding:4px;border:1px solid #ccc;border-radius:4px';
+      inp.value=item.targets_vendido[i]||'';
+      vendidoDiv.appendChild(inp);
+    }
+    card.appendChild(vendidoDiv);
+    
+    // Inputs faturado
+    const faturadoLabel=document.createElement('div');
+    faturadoLabel.textContent='Metas Faturado (6 cotas)';
+    faturadoLabel.style.cssText='font-size:10px;color:#5A5751;font-weight:500;margin-bottom:4px';
+    card.appendChild(faturadoLabel);
+    const faturadoDiv=document.createElement('div');
+    faturadoDiv.style.cssText='display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px';
+    for(let i=0;i<6;i++){
+      const inp=document.createElement('input');
+      inp.type='number';
+      inp.id='tf-'+item.id+'-'+i;
+      inp.placeholder='C'+(i+1);
+      inp.style.cssText='font-size:9px;padding:4px;border:1px solid #ccc;border-radius:4px';
+      inp.value=item.targets_faturado[i]||'';
+      faturadoDiv.appendChild(inp);
+    }
+    card.appendChild(faturadoDiv);
+    
+    // Botões
+    const btnContainer=document.createElement('div');
+    btnContainer.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+    
+    const saveBtn=document.createElement('button');
+    saveBtn.textContent='Salvar';
+    saveBtn.style.cssText='flex:1;min-width:60px;font-size:10px;padding:4px 8px;background:#0F6E56;color:#fff;border:none;border-radius:4px;cursor:pointer';
+    saveBtn.onclick=()=>saveCotasRegiao(item.id,idx);
+    btnContainer.appendChild(saveBtn);
+    
+    const addBtn=document.createElement('button');
+    addBtn.textContent='+';
+    addBtn.style.cssText='font-size:10px;padding:4px 8px;background:#9A948A;color:#fff;border:none;border-radius:4px;cursor:pointer;width:40px';
+    addBtn.onclick=()=>addCotasRegiao(idx);
+    btnContainer.appendChild(addBtn);
+    
+    if(cotasData.length>1){
+      const removeBtn=document.createElement('button');
+      removeBtn.textContent='✕';
+      removeBtn.style.cssText='font-size:10px;padding:4px 8px;background:#A32D2D;color:#fff;border:none;border-radius:4px;cursor:pointer;width:40px';
+      removeBtn.onclick=()=>removeCotasRegiao(idx);
+      btnContainer.appendChild(removeBtn);
+    }
+    
+    card.appendChild(btnContainer);
+    grid.appendChild(card);
+  });
+  
   panel.style.display='block';
-  const rid=currentRegion;
-  const c=ensureCotas(rid);
-  document.getElementById('cotas-r-mes').textContent=c.mes;
-  const numCotas=c.targets_vendido.length||6;
-  document.getElementById('cr-num-cotas').value=numCotas;
-  renderCotasInputs();
-  document.getElementById('cr-atual-vendido').textContent=fmtBRL(c.atual_vendido);
-  document.getElementById('cr-atual-faturado').textContent=fmtBRL(c.atual_faturado);
-  const hitV=cotaHit(c.atual_vendido,c.targets_vendido);
-  const hitF=cotaHit(c.atual_faturado,c.targets_faturado);
-  document.getElementById('cr-hit-vendido').textContent=hitV+'/'+numCotas;
-  document.getElementById('cr-hit-faturado').textContent=hitF+'/'+numCotas;
-  renderChartCotas('chartCotasRegiao',c.historico||[]);
+};
+
+window.saveCotasRegiao=function(id,idx){
+  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
+  const nome=document.getElementById('region-name-'+id).value.trim();
+  if(!nome){
+    alert('Digite o nome da região');
+    return;
+  }
+  
+  const targets_vendido=[];
+  const targets_faturado=[];
+  for(let i=0;i<6;i++){
+    targets_vendido.push(Number(document.getElementById('tv-'+id+'-'+i).value)||0);
+    targets_faturado.push(Number(document.getElementById('tf-'+id+'-'+i).value)||0);
+  }
+  
+  cotasData[idx]={id,nome,targets_vendido,targets_faturado};
+  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
+  renderCotasMenu();
+};
+
+window.addCotasRegiao=function(afterIdx){
+  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
+  const newItem={id:Date.now(),nome:'',targets_vendido:[0,0,0,0,0,0],targets_faturado:[0,0,0,0,0,0]};
+  cotasData.splice(afterIdx+1,0,newItem);
+  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
+  renderCotasMenu();
+};
+
+window.removeCotasRegiao=function(idx){
+  if(!confirm('Remover esta região?'))return;
+  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
+  cotasData.splice(idx,1);
+  if(cotasData.length===0){
+    cotasData.push({id:Date.now(),nome:'',targets_vendido:[0,0,0,0,0,0],targets_faturado:[0,0,0,0,0,0]});
+  }
+  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
+  renderCotasMenu();
+};
+
+window.renderCotasRegiao=function(){
+  renderCotasMenu();
 }
 
 // ── Painel de cotas consolidadas (todas as regiões da vendedora) ──

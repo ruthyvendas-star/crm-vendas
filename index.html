@@ -249,7 +249,6 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
   <div style="text-align:center;margin-bottom:1.25rem;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
     <button onclick="goConsolidado()" style="background:#1E2430;color:#FFFFFF;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="ti ti-chart-bar"></i> Consolidado de Desempenho</button>
     <button onclick="openManageRegions()" class="back-btn secondary" style="font-size:12px"><i class="ti ti-map-2"></i> Gerenciar regiões</button>
-    <button onclick="openManageCotas()" class="back-btn secondary" style="font-size:12px"><i class="ti ti-target"></i> Cotas</button>
     <button onclick="openAddRegion()" class="back-btn secondary" style="font-size:12px"><i class="ti ti-plus"></i> Adicionar região</button>
     <button onclick="openImportClients()" style="background:#0F6E56;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><i class="ti ti-file-spreadsheet"></i> Importar planilha de clientes</button>
     <button onclick="openHelp()" class="back-btn secondary" style="font-size:12px"><i class="ti ti-help-circle"></i> Como usar</button>
@@ -323,32 +322,6 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
       <input type="text" id="new-region-uf" placeholder="UF" maxlength="2" style="width:60px;font-size:13px;padding:8px">
     </div>
     <button onclick="addRegion()" style="width:100%;padding:11px;border-radius:8px;border:none;background:#0F6E56;color:#fff;font-weight:600;font-size:13px;cursor:pointer">Adicionar</button>
-  </div>
-</div>
-
-<div id="cotas-modal-overlay" onclick="closeManageCotas(event)" style="display:none;position:fixed;inset:0;background:rgba(30,36,48,.5);z-index:9000;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:14px;padding:24px;max-width:1000px;width:100%;max-height:85vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <div style="font-weight:700;font-size:16px;color:#1E2430">Cotas do mês (por região)</div>
-      <button onclick="closeManageCotas()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9A948A">×</button>
-    </div>
-    <div style="overflow-x:auto;margin-bottom:1rem">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
-          <tr style="border-bottom:2px solid #ddd;background:#f5f5f5">
-            <th style="padding:8px;text-align:left;font-weight:600;color:#1E2430">Região</th>
-            <th colspan="6" style="padding:8px;text-align:center;font-weight:600;color:#1E2430">Metas Vendido (6 cotas)</th>
-            <th colspan="6" style="padding:8px;text-align:center;font-weight:600;color:#1E2430">Metas Faturado (6 cotas)</th>
-            <th style="padding:8px;text-align:center;font-weight:600;color:#1E2430">Ação</th>
-          </tr>
-        </thead>
-        <tbody id="cotas-table-body"></tbody>
-      </table>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="addCotasRow()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#9A948A;color:#fff;font-weight:600;cursor:pointer;font-size:12px">+ Adicionar região</button>
-      <button onclick="saveCotasModal()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#0F6E56;color:#fff;font-weight:600;cursor:pointer;font-size:12px">Salvar tudo</button>
-    </div>
   </div>
 </div>
 
@@ -562,7 +535,38 @@ label.fl{font-size:10px;color:#9A948A;text-transform:uppercase;letter-spacing:.0
       <div style="position:relative;height:200px"><canvas id="chartMensal"></canvas></div>
       <p style="font-size:11px;color:#9A948A;margin-top:.5rem">Adicione fechamentos em <strong>Fechamento mensal</strong> para ver a curva.</p>
     </div>
-
+    <div id="cotas-regiao-admin" style="display:none">
+      <div class="chart-card" style="border:2px dashed #A32D2D">
+        <div class="chart-title" style="color:#A32D2D">🔧 Cotas do mês (só você vê)</div>
+        <div style="font-size:11px;color:#9A948A;margin-bottom:.75rem">Mês: <span id="cotas-r-mes"></span></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:.5rem">
+          <div style="font-size:11px;color:#5A5751;grid-column:1/-1">Metas Vendido (cota 1 a 6)</div>
+          <input type="number" id="cr-tv-0" placeholder="Cota 1" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tv-1" placeholder="Cota 2" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tv-2" placeholder="Cota 3" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tv-3" placeholder="Cota 4" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tv-4" placeholder="Cota 5" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tv-5" placeholder="Cota 6" style="font-size:11px;padding:5px">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:.75rem">
+          <div style="font-size:11px;color:#5A5751;grid-column:1/-1">Metas Faturado (cota 1 a 6)</div>
+          <input type="number" id="cr-tf-0" placeholder="Cota 1" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tf-1" placeholder="Cota 2" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tf-2" placeholder="Cota 3" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tf-3" placeholder="Cota 4" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tf-4" placeholder="Cota 5" style="font-size:11px;padding:5px">
+          <input type="number" id="cr-tf-5" placeholder="Cota 6" style="font-size:11px;padding:5px">
+        </div>
+        <button onclick="saveCotasRegiaoTargets()" style="font-size:11px;padding:6px 12px;border-radius:6px;border:none;background:#0F6E56;color:#fff;cursor:pointer;margin-right:6px">Salvar metas</button>
+        <button onclick="registrarMesRegiao()" style="font-size:11px;padding:6px 12px;border-radius:6px;border:none;background:#A32D2D;color:#fff;cursor:pointer">Registrar mês (arquivar e zerar)</button>
+        <div id="cotas-r-status" style="font-size:11px;color:#0F6E56;margin-top:8px"></div>
+        <div style="margin-top:1rem;font-size:12px;color:#5A5751">
+          Vendido atual: <strong id="cr-atual-vendido">R$ 0</strong> — cota batida: <strong id="cr-hit-vendido">0/6</strong><br>
+          Faturado atual: <strong id="cr-atual-faturado">R$ 0</strong> — cota batida: <strong id="cr-hit-faturado">0/6</strong>
+        </div>
+        <div style="position:relative;height:180px;margin-top:1rem"><canvas id="chartCotasRegiao"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <div id="section-followup" style="display:none">
@@ -1408,128 +1412,58 @@ function somaCotasAtuais(campo){
   return total;
 }
 
-// ── Modal de cotas ──
-window.openManageCotas=function(){
-  document.getElementById('cotas-modal-overlay').style.display='flex';
-  renderCotasModal();
+// ── Painel de cotas por região (aba Análises) ──
+window.saveCotasRegiaoTargets=async function(){
+  const rid=currentRegion;
+  const c=ensureCotas(rid);
+  c.targets_vendido=[0,1,2,3,4,5].map(i=>Number(document.getElementById('cr-tv-'+i).value)||0);
+  c.targets_faturado=[0,1,2,3,4,5].map(i=>Number(document.getElementById('cr-tf-'+i).value)||0);
+  await saveRegion(rid);
+  document.getElementById('cotas-r-status').textContent='Metas salvas!';
+  renderCotasRegiao();
 };
 
-window.closeManageCotas=function(e){
-  if(e && e.target.id!=='cotas-modal-overlay')return;
-  document.getElementById('cotas-modal-overlay').style.display='none';
-};
-
-window.renderCotasModal=function(){
-  const tbody=document.getElementById('cotas-table-body');
-  tbody.innerHTML='';
-  
-  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
-  
-  cotasData.forEach((item,idx)=>{
-    const row=document.createElement('tr');
-    row.style.cssText='border-bottom:1px solid #eee';
-    
-    // Nome região
-    const nameCell=document.createElement('td');
-    const nameInput=document.createElement('input');
-    nameInput.type='text';
-    nameInput.value=item.nome||'';
-    nameInput.placeholder='Nome da região';
-    nameInput.style.cssText='width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:11px';
-    nameInput.id='cotas-name-'+item.id;
-    nameCell.appendChild(nameInput);
-    nameCell.style.cssText='padding:6px';
-    row.appendChild(nameCell);
-    
-    // 6 cotas vendido
-    for(let i=0;i<6;i++){
-      const cell=document.createElement('td');
-      const input=document.createElement('input');
-      input.type='number';
-      input.value=item.targets_vendido[i]||'';
-      input.placeholder='0';
-      input.style.cssText='width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:10px';
-      input.id='cotas-tv-'+item.id+'-'+i;
-      cell.appendChild(input);
-      cell.style.cssText='padding:4px';
-      row.appendChild(cell);
-    }
-    
-    // 6 cotas faturado
-    for(let i=0;i<6;i++){
-      const cell=document.createElement('td');
-      const input=document.createElement('input');
-      input.type='number';
-      input.value=item.targets_faturado[i]||'';
-      input.placeholder='0';
-      input.style.cssText='width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:10px';
-      input.id='cotas-tf-'+item.id+'-'+i;
-      cell.appendChild(input);
-      cell.style.cssText='padding:4px';
-      row.appendChild(cell);
-    }
-    
-    // Botão remover
-    const actionCell=document.createElement('td');
-    if(cotasData.length>1){
-      const removeBtn=document.createElement('button');
-      removeBtn.textContent='✕';
-      removeBtn.style.cssText='padding:4px 8px;background:#A32D2D;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:10px';
-      removeBtn.onclick=()=>removeCotasRow(idx);
-      actionCell.appendChild(removeBtn);
-    }
-    actionCell.style.cssText='padding:6px;text-align:center';
-    row.appendChild(actionCell);
-    
-    tbody.appendChild(row);
+window.registrarMesRegiao=async function(){
+  const rid=currentRegion;
+  const c=ensureCotas(rid);
+  if(!confirm('Registrar o mês '+c.mes+'? Isso arquiva o resultado no histórico e zera os campos para o próximo mês.'))return;
+  c.historico=c.historico||[];
+  c.historico.push({
+    mes:c.mes,
+    targets_vendido:c.targets_vendido,
+    targets_faturado:c.targets_faturado,
+    atual_vendido:c.atual_vendido,
+    atual_faturado:c.atual_faturado,
+    hit_vendido:cotaHit(c.atual_vendido,c.targets_vendido),
+    hit_faturado:cotaHit(c.atual_faturado,c.targets_faturado)
   });
+  if(c.historico.length>12)c.historico=c.historico.slice(-12);
+  c.mes=currentMonthStr();
+  c.targets_vendido=[0,0,0,0,0,0];
+  c.targets_faturado=[0,0,0,0,0,0];
+  c.atual_vendido=0;
+  c.atual_faturado=0;
+  await saveRegion(rid);
+  document.getElementById('cotas-r-status').textContent='Mês registrado e arquivado!';
+  renderCotasRegiao();
 };
 
-window.addCotasRow=function(){
-  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
-  cotasData.push({id:Date.now(),nome:'',targets_vendido:[0,0,0,0,0,0],targets_faturado:[0,0,0,0,0,0]});
-  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
-  renderCotasModal();
-};
-
-window.removeCotasRow=function(idx){
-  if(!confirm('Remover esta região?'))return;
-  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
-  cotasData.splice(idx,1);
-  if(cotasData.length===0){
-    cotasData.push({id:Date.now(),nome:'',targets_vendido:[0,0,0,0,0,0],targets_faturado:[0,0,0,0,0,0]});
-  }
-  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
-  renderCotasModal();
-};
-
-window.saveCotasModal=function(){
-  const cotasData=JSON.parse(localStorage.getItem('cotasRegioes'))||[];
-  
-  cotasData.forEach((item,idx)=>{
-    const nome=document.getElementById('cotas-name-'+item.id).value.trim();
-    if(!nome){
-      alert('Digite o nome da região');
-      return;
-    }
-    
-    const targets_vendido=[];
-    const targets_faturado=[];
-    for(let i=0;i<6;i++){
-      targets_vendido.push(Number(document.getElementById('cotas-tv-'+item.id+'-'+i).value)||0);
-      targets_faturado.push(Number(document.getElementById('cotas-tf-'+item.id+'-'+i).value)||0);
-    }
-    
-    cotasData[idx]={id:item.id,nome,targets_vendido,targets_faturado};
+function renderCotasRegiao(){
+  if(!isAdmin())return;
+  const panel=document.getElementById('cotas-regiao-admin');
+  panel.style.display='block';
+  const rid=currentRegion;
+  const c=ensureCotas(rid);
+  document.getElementById('cotas-r-mes').textContent=c.mes;
+  [0,1,2,3,4,5].forEach(i=>{
+    document.getElementById('cr-tv-'+i).value=c.targets_vendido[i]||'';
+    document.getElementById('cr-tf-'+i).value=c.targets_faturado[i]||'';
   });
-  
-  localStorage.setItem('cotasRegioes',JSON.stringify(cotasData));
-  alert('Cotas salvas!');
-  closeManageCotas();
-};
-
-window.renderCotasMenu=function(){
-  renderCotasModal();
+  document.getElementById('cr-atual-vendido').textContent=fmtBRL(c.atual_vendido);
+  document.getElementById('cr-atual-faturado').textContent=fmtBRL(c.atual_faturado);
+  document.getElementById('cr-hit-vendido').textContent=cotaHit(c.atual_vendido,c.targets_vendido)+'/6';
+  document.getElementById('cr-hit-faturado').textContent=cotaHit(c.atual_faturado,c.targets_faturado)+'/6';
+  renderChartCotas('chartCotasRegiao',c.historico||[]);
 }
 
 // ── Painel de cotas consolidadas (todas as regiões da vendedora) ──

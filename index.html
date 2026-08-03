@@ -2374,14 +2374,10 @@ window.deleteRegionPrompt=async function(rid){
 
 function initApp(){
   loadRegionsConfig().then(async ()=>{
-    Object.keys(REGIONS_RAW).forEach(rid=>{
-      allMeta[rid]=JSON.parse(localStorage.getItem(lsKey('crm_meta',rid))||'{}');
-      allFechamentos[rid]=JSON.parse(localStorage.getItem(lsKey('crm_fech',rid))||'[]');
-      allTasks[rid]=JSON.parse(localStorage.getItem(lsKey('crm_tasks',rid))||'[]');
-      allProspects[rid]=JSON.parse(localStorage.getItem(lsKey('crm_prospects',rid))||'[]');
-      allPromoted[rid]=JSON.parse(localStorage.getItem(lsKey('crm_promoted',rid))||'[]');
-      allCotas[rid]=JSON.parse(localStorage.getItem(lsKey('crm_cotas',rid))||'null');
-    });
+    const regionIds=Object.keys(REGIONS_RAW);
+    for(const rid of regionIds){
+      await loadRegionMeta(rid);
+    }
     if(isAdmin())await loadCotasConsolidado();
     setSyncStatus('ok','Conectado');
     renderHome();

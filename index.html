@@ -718,8 +718,9 @@ const STATUS_CFG = {
 const AV_BG=['#E1F5EE','#FAEEDA','#E6F1FB','#FCEBEB','#EEEDFE','#FAECE7'];
 const AV_FG=['#0F6E56','#854F0B','#185FA5','#A32D2D','#534AB7','#993C1D'];
 
-let allMeta={}, allFechamentos={}, allTasks={}, allProspects={}, allPromoted={}, allCotas={};
+let allMeta={}, allFechamentos={}, allTasks={}, allProspects={}, allPromoted={};
 let currentRegion=null, currentSection='', openCode=null, openProspectIdx=null, currentUID=null, currentUserEmail=null;
+let searchIndexCache={};
 const ADMIN_EMAIL='ruthy.vendas@gmail.com';
 function isAdmin(){ return currentUserEmail===ADMIN_EMAIL; }
 let keepAllExpanded=false;
@@ -863,6 +864,19 @@ function regionClients(rid){
     Object.keys(m).forEach(k=>{ if(!FIXED.includes(k)) safe[k]=m[k]; });
     return {...c,...safe};
   });
+}
+
+function buildSearchIndex(rid){
+  const clients=regionClients(rid);
+  searchIndexCache[rid]=clients.map(c=>({
+    code:c.code,
+    name:c.name.toLowerCase(),
+    city:c.city.toLowerCase(),
+    cnpj:(c.cnpj||'').replace(/\D/g,''),
+    telefone:(c.telefone||'').replace(/\D/g,''),
+    codeDigits:(c.code||'').replace(/\D/g,''),
+    original:c
+  }));
 }
 
 function regionStats(rid){
@@ -1595,18 +1609,20 @@ function debouncedRenderClientes(){
 
 function renderClientes(){
   document.getElementById('keep-expanded-toggle').checked=keepAllExpanded;
+  if(!searchIndexCache[currentRegion]){buildSearchIndex(currentRegion);}
   const q=(document.getElementById('search-input').value||'').toLowerCase();
   const qDigits=q.replace(/\D/g,'');
   const st=document.getElementById('filter-status').value;
   const ci=document.getElementById('filter-cidade').value;
-  let list=regionClients(currentRegion).filter(c=>{
-    const textMatch=(c.name+c.city+c.code+(c.cnpj||'')+(c.telefone||'')).toLowerCase().includes(q);
-    const digitsMatch=qDigits&&((c.cnpj||'').replace(/\D/g,'').includes(qDigits)||(c.telefone||'').replace(/\D/g,'').includes(qDigits)||(c.code||'').replace(/\D/g,'').includes(qDigits));
+  let list=searchIndexCache[currentRegion].filter(idx=>{
+    const c=idx.original;
+    const textMatch=(idx.name+idx.city+idx.code+idx.cnpj+idx.telefone).includes(q);
+    const digitsMatch=qDigits&&(idx.cnpj.includes(qDigits)||idx.telefone.includes(qDigits)||idx.codeDigits.includes(qDigits));
     if(q&&!textMatch&&!digitsMatch)return false;
     if(st&&statusOf(c)!==st)return false;
     if(ci&&c.city!==ci)return false;
     return true;
-  }).sort((a,b)=>a.city.localeCompare(b.city,'pt-BR')||a.name.localeCompare(b.name,'pt-BR'));
+  }).map(idx=>idx.original).sort((a,b)=>a.city.localeCompare(b.city,'pt-BR')||a.name.localeCompare(b.name,'pt-BR'));
   const meta=allMeta[currentRegion]||{};
   const allRegionClients=regionClients(currentRegion);
   const matrizCodesInUse=new Set(allRegionClients.filter(x=>x.matriz_code).map(x=>x.matriz_code));
@@ -2374,10 +2390,14 @@ window.deleteRegionPrompt=async function(rid){
 
 function initApp(){
   loadRegionsConfig().then(async ()=>{
-    const regionIds=Object.keys(REGIONS_RAW);
-    for(const rid of regionIds){
-      await loadRegionMeta(rid);
-    }
+    Object.keys(REGIONS_RAW).forEach(rid=>{
+      allMeta[rid]=JSON.parse(localStorage.getItem(lsKey('crm_meta',rid))||'{}');
+      allFechamentos[rid]=JSON.parse(localStorage.getItem(lsKey('crm_fech',rid))||'[]');
+      allTasks[rid]=JSON.parse(localStorage.getItem(lsKey('crm_tasks',rid))||'[]');
+      allProspects[rid]=JSON.parse(localStorage.getItem(lsKey('crm_prospects',rid))||'[]');
+      allPromoted[rid]=JSON.parse(localStorage.getItem(lsKey('crm_promoted',rid))||'[]');
+      allCotas[rid]=JSON.parse(localStorage.getItem(lsKey('crm_cotas',rid))||'null');
+    });
     if(isAdmin())await loadCotasConsolidado();
     setSyncStatus('ok','Conectado');
     renderHome();
